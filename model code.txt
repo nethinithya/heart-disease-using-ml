@@ -1,0 +1,126 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+data = pd.read_csv('heart.csv')
+X = data.iloc[:, 0:13]
+y = data.iloc[:,13]
+#Select k best feature selection algorithm
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+X_cat = X.astype(int)
+chi2_features = SelectKBest(chi2, k=12)
+X_train = chi2_features.fit_transform(X_cat,y)
+numerics = ['int16','int32','int64','float16','float32','float64']
+numerical_vars = list(data.select_dtypes(include=numerics).columns)
+data = data[numerical_vars]
+print(data)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    data.drop(labels=['target'], axis=1),
+    data['target'],
+    test_size=0.3,
+    random_state=0)
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaler.fit(X_train.fillna(0))
+#Lasso Feature Selection algorithm
+from sklearn.linear_model import Lasso, LogisticRegression
+from sklearn.feature_selection import SelectFromModel
+sel_ = SelectFromModel(LogisticRegression(C=1, penalty='l2'))
+sel_.fit(scaler.transform(X_train.fillna(0)), y_train)
+selected_feat = X_train.columns[(sel_.get_support())]
+print(selected_feat)
+X_train_selected = sel_.transform(X_train.fillna(0))
+X_test_selected = sel_.transform(X_test.fillna(0))
+
+
+
+from sklearn import svm
+svm_clf = svm.SVC(kernel ='linear')
+svm_clf.fit(X_train_selected,y_train)
+y_pred_svm =svm_clf.predict(X_test_selected)
+from sklearn.metrics import confusion_matrix
+cm_svm = confusion_matrix(y_test, y_pred_svm)
+
+from sklearn.metrics import accuracy_score
+svm_result = accuracy_score(y_test,y_pred_svm)
+print("Accuracy of SVM is:",svm_result)
+recall_svm = cm_svm[0][0]/(cm_svm[0][0] + cm_svm[0][1])
+precision_svm = cm_svm[0][0]/(cm_svm[0][0]+cm_svm[1][1])
+print("the recall and precision of SVM are:",recall_svm,precision_svm)
+
+
+from sklearn.neighbors import KNeighborsClassifier
+knn_clf = KNeighborsClassifier(n_neighbors =5,n_jobs = -1,leaf_size = 60,algorithm='brute')
+knn_clf.fit(X_train_selected,y_train)
+y_pred_knn = knn_clf.predict(X_test_selected)
+from sklearn.metrics import confusion_matrix
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+knn_result = accuracy_score(y_test,y_pred_knn)
+print("Accuracy for knn result :", knn_result)
+recall_knn = cm_knn[0][0]/(cm_knn[0][0] + cm_knn[0][1])
+precision_knn = cm_knn[0][0]/(cm_knn[0][0]+cm_knn[1][1])
+print("The Recall and Precision of KNN is:",recall_knn,precision_knn)
+
+from sklearn.ensemble import RandomForestClassifier
+RF = RandomForestClassifier()
+RF.fit(X_train_selected, y_train)
+y_pred_rf =RF.predict(X_test_selected)
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm_rf = confusion_matrix(y_test, y_pred_rf)
+from sklearn.metrics import accuracy_score
+rf_result = accuracy_score(y_test,y_pred_rf)
+print("Accuracy of Random Forest:",rf_result)
+recall_rf = cm_rf[0][0]/(cm_rf[0][0] + cm_rf[0][1])
+precision_rf = cm_rf[0][0]/(cm_rf[0][0]+cm_rf[1][1])
+print("the Recall and Precision of random forest are:",recall_rf,precision_rf)
+
+from sklearn import tree
+DT = tree.DecisionTreeClassifier()
+DT.fit(X_train_selected, y_train)
+y_pred_DT =DT.predict(X_test_selected)
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm_DT = confusion_matrix(y_test, y_pred_DT)
+from sklearn.metrics import accuracy_score
+DT_result = accuracy_score(y_test,y_pred_DT)
+print("Accuracy :",DT_result)
+recall_DT = cm_DT[0][0]/(cm_DT[0][0] + cm_DT[0][1])
+precision_DT = cm_DT[0][0]/(cm_DT[0][0]+cm_DT[1][1])
+print(recall_DT,precision_DT)
+from sklearn.naive_bayes import GaussianNB
+NB = GaussianNB()
+NB.fit(X_train_selected, y_train)
+y_pred_NB =NB.predict(X_test_selected)
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm_NB = confusion_matrix(y_test, y_pred_NB)
+from sklearn.metrics import accuracy_score
+NB_result = accuracy_score(y_test,y_pred_NB)
+print("Accuracy :",NB_result)
+recall_NB = cm_NB[0][0]/(cm_NB[0][0] + cm_NB[0][1])
+precision_NB = cm_NB[0][0]/(cm_NB[0][0]+cm_NB[1][1])
+print(recall_NB,precision_NB)
+from sklearn.linear_model import LogisticRegression
+LR = LogisticRegression(random_state=0)
+LR.fit(X_train_selected, y_train)
+y_pred_LR =LR.predict(X_test_selected)
+# Making the Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm_LR = confusion_matrix(y_test, y_pred_LR)
+from sklearn.metrics import accuracy_score
+LR_result = accuracy_score(y_test,y_pred_LR)
+print("Accuracy :",LR_result)
+recall_LR = cm_LR[0][0]/(cm_LR[0][0] + cm_LR[0][1])
+precision_LR = cm_LR[0][0]/(cm_LR[0][0]+cm_LR[1][1])
+print(recall_LR,precision_LR)
+results ={'Accuracy': [svm_result*100,knn_result*100,rf_result*100,DT_result*100,NB_result*100,LR_result*100],
+          'Recall': [recall_svm*100,recall_knn*100,recall_rf*100,recall_DT*100,recall_NB*100,recall_LR*100],
+          'Precision': [precision_svm*100,precision_knn*100,precision_rf*100,precision_DT*100,precision_NB*100,precision_LR*100]}
+index = ['SVM','KNN','RFC','DT','GNB','LR']
+results =pd.DataFrame(results,index=index)
+fig =results.plot(kind='bar',title='Comaprison of models',figsize =(9,9)).get_figure()
+fig.savefig('Final Result.png')
+plt.show()
